@@ -132,7 +132,10 @@ var _video = null;
 var _canvas = null;
 var _ctx = null;
 var _lastTick = 0;
-var SCAN_INTERVAL = 50; // ~20fps
+var SCAN_INTERVAL = 50;
+var _detector = (typeof BarcodeDetector !== 'undefined')
+  ? new BarcodeDetector({formats: ['qr_code']})
+  : null;
 
 var DEFAULTS = [
   {id:'isc', name:'ISC', day:1},
@@ -241,16 +244,27 @@ function tick(ts) {
   if (_video.readyState < 2) { requestAnimationFrame(tick); return; }
   if (ts - _lastTick < SCAN_INTERVAL) { requestAnimationFrame(tick); return; }
   _lastTick = ts;
-  var sw = _video.videoWidth, sh = _video.videoHeight;
-  var scale = Math.min(1, 1024 / Math.max(sw, sh));
-  var w = Math.round(sw * scale), h = Math.round(sh * scale);
-  if (_canvas.width !== w) _canvas.width = w;
-  if (_canvas.height !== h) _canvas.height = h;
-  _ctx.drawImage(_video, 0, 0, w, h);
-  var img = _ctx.getImageData(0, 0, w, h);
-  var code = jsQR(img.data, w, h, {inversionAttempts:'attemptBoth'});
-  if (code && code.data) { scanning = false; lookup(code.data); }
-  else { requestAnimationFrame(tick); }
+
+  if (_detector) {
+    _detector.detect(_video)
+      .then(function(codes) {
+        if (!scanning) return;
+        if (codes.length > 0) { scanning = false; lookup(codes[0].rawValue); }
+        else { requestAnimationFrame(tick); }
+      })
+      .catch(function() { requestAnimationFrame(tick); });
+  } else {
+    var sw = _video.videoWidth, sh = _video.videoHeight;
+    var scale = Math.min(1, 1024 / Math.max(sw, sh));
+    var w = Math.round(sw * scale), h = Math.round(sh * scale);
+    if (_canvas.width !== w) _canvas.width = w;
+    if (_canvas.height !== h) _canvas.height = h;
+    _ctx.drawImage(_video, 0, 0, w, h);
+    var img = _ctx.getImageData(0, 0, w, h);
+    var code = jsQR(img.data, w, h, {inversionAttempts:'attemptBoth'});
+    if (code && code.data) { scanning = false; lookup(code.data); }
+    else { requestAnimationFrame(tick); }
+  }
 }
 
 function lookup(code) {
