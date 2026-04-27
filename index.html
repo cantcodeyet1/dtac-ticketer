@@ -212,12 +212,16 @@ function startCam() {
   _video = document.getElementById('video');
   _canvas = document.getElementById('canvas');
   _ctx = _canvas.getContext('2d');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}})
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
     .then(function(s){
       stream = s;
       _video.srcObject = s;
-      _video.play();
-      _video.onloadedmetadata = function(){ scanning = true; requestAnimationFrame(tick); };
+      _video.addEventListener('play', function onPlay() {
+        _video.removeEventListener('play', onPlay);
+        scanning = true;
+        requestAnimationFrame(tick);
+      });
+      _video.play().catch(function(){});
       document.getElementById('camera-wrap').style.display = 'flex';
       document.getElementById('manual-wrap').style.display = 'none';
     })
@@ -234,7 +238,7 @@ function stopCam() {
 
 function tick(ts) {
   if (!scanning) return;
-  if (_video.readyState !== _video.HAVE_ENOUGH_DATA) { requestAnimationFrame(tick); return; }
+  if (_video.readyState < 2) { requestAnimationFrame(tick); return; }
   if (ts - _lastTick < SCAN_INTERVAL) { requestAnimationFrame(tick); return; }
   _lastTick = ts;
   var sw = _video.videoWidth, sh = _video.videoHeight;
