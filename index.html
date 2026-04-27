@@ -4,79 +4,85 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
-<title>TM Conference Check-in</title>
+<title>District 129 Conference Check-in</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
-:root{--bg:#0d0d0f;--surface:#17171a;--border:#2a2a2f;--text:#f0f0f2;--muted:#6b6b75;--accent:#7b61ff;--green:#00e676;--green-bg:#00291a;--red:#ff4d4d;--red-bg:#2b0a0a;--amber:#ffb800}
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--bg:#004165;--surface:#004f7a;--border:#006094;--text:#f0ebe0;--muted:#7aabbf;--accent:#f2df74;--teal:#006094;--green:#00c853;--green-bg:#002918;--red:#e53935;--red-bg:#2b0808;--amber:#f2df74}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.logo{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-.logo span{color:var(--accent)}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(160deg,#004165 0%,#006094 100%);min-height:100dvh;display:flex;flex-direction:column;overflow:hidden;color:var(--text)}
+header{padding:14px 20px 12px;background:var(--surface);border-bottom:2px solid var(--accent);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{display:flex;flex-direction:column;gap:1px}
+.logo-top{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
 #status{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);display:flex;align-items:center;gap:5px}
 #status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s}
 #status.on::before{background:var(--green)}
-#session-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px}
+#session-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:28px}
 .screen-title{text-align:center}
-.screen-title h1{font-size:22px;font-weight:600;margin-bottom:6px}
-.screen-title p{font-size:14px;color:var(--muted)}
-.sessions-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:400px}
-.session-btn{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;text-align:left;cursor:pointer;line-height:1.35}
-.session-btn:active{transform:scale(.97)}
-.day-tag{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
-.day1 .day-tag{color:#7b61ff}
-.day2 .day-tag{color:var(--amber)}
+.screen-title h1{font-family:'Montserrat',sans-serif;font-size:20px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text);margin-bottom:4px}
+.screen-title p{font-size:13px;color:var(--muted)}
+.sessions-grid{display:grid;grid-template-columns:1fr;gap:10px;width:100%;max-width:400px}
+.session-btn{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:0;color:var(--text);font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;display:flex;align-items:stretch;overflow:hidden;transition:border-color .2s}
+.session-btn:active{transform:scale(.98)}
+.session-btn:active,.session-btn:hover{border-color:var(--accent);background:#0f3d4d}
+.btn-date{background:var(--accent);color:#07222a;font-family:'Montserrat',sans-serif;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:0 14px;display:flex;align-items:center;justify-content:center;text-align:center;min-width:62px;line-height:1.3}
+.btn-body{padding:14px 16px 14px 16px;flex:1}
+.day-tag{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.btn-name{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
 #scanner-screen{flex:1;display:none;flex-direction:column}
-.session-bar{padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.session-bar .lbl{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
-.session-bar .nm{font-size:14px;font-weight:600;margin-top:2px}
-.change-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer}
+.session-bar{padding:10px 20px;background:var(--surface);border-bottom:2px solid var(--accent);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.session-bar .lbl{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+.session-bar .nm{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-top:2px;color:var(--accent)}
+.change-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer}
 .camera-wrap{position:relative;flex:1;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
 #video{width:100%;height:100%;object-fit:cover;display:block}
 #canvas{display:none}
 .viewfinder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .vf-box{width:220px;height:220px;position:relative}
-.vf-box::before,.vf-box::after,.vf-tl::before,.vf-tl::after{content:'';position:absolute;width:28px;height:28px;border-color:rgba(255,255,255,.8);border-style:solid}
-.vf-box::before{top:0;left:0;border-width:2px 0 0 2px;border-radius:3px 0 0 0}
-.vf-box::after{top:0;right:0;border-width:2px 2px 0 0;border-radius:0 3px 0 0}
-.vf-tl::before{bottom:0;left:0;border-width:0 0 2px 2px;border-radius:0 0 0 3px}
-.vf-tl::after{bottom:0;right:0;border-width:0 2px 2px 0;border-radius:0 0 3px 0}
+.vf-box::before,.vf-box::after,.vf-tl::before,.vf-tl::after{content:'';position:absolute;width:32px;height:32px;border-color:var(--accent);border-style:solid}
+.vf-box::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:3px 0 0 0}
+.vf-box::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 3px 0 0}
+.vf-tl::before{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 3px}
+.vf-tl::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 3px 0}
 .scan-line{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanline 2s ease-in-out infinite;top:4px}
 @keyframes scanline{0%{top:4px;opacity:1}45%{top:calc(100% - 6px);opacity:1}50%{opacity:0}55%{top:4px;opacity:0}60%{opacity:1}100%{top:calc(100% - 6px);opacity:1}}
-.hint{position:absolute;bottom:20px;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace}
+.hint{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;background:rgba(7,34,42,.8);padding:7px 0}
 #result-overlay{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:32px}
-#result-overlay.approved{background:var(--green-bg)}
-#result-overlay.denied{background:var(--red-bg)}
-#result-overlay.unknown{background:#1a1400}
+#result-overlay.approved{background:linear-gradient(160deg,#002918,#083a30)}
+#result-overlay.denied{background:linear-gradient(160deg,#2b0808,#1a0010)}
+#result-overlay.unknown{background:linear-gradient(160deg,#1a1200,#0d2a30)}
 .r-icon{font-size:72px;margin-bottom:16px;animation:pop .3s cubic-bezier(.175,.885,.32,1.275)}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-.r-status{font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
-.approved .r-status{color:var(--green)}
-.denied .r-status{color:var(--red)}
-.unknown .r-status{color:var(--amber)}
-.r-name{font-size:28px;font-weight:600;text-align:center;margin-bottom:6px}
-.r-detail{font-size:14px;color:var(--muted);text-align:center;margin-bottom:32px}
-.r-tap{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.08em;animation:pulse 1.5s ease-in-out infinite}
+.r-status{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;padding:4px 14px;border-radius:20px;display:inline-block}
+.approved .r-status{color:#07222a;background:var(--green)}
+.denied .r-status{color:#fff;background:var(--red)}
+.unknown .r-status{color:#07222a;background:var(--amber)}
+.r-name{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:800;text-align:center;margin-bottom:6px;letter-spacing:.02em}
+.r-detail{font-size:13px;color:var(--muted);text-align:center;margin-bottom:32px}
+.r-tap{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.08em;animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
-.stats-bar{padding:10px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;gap:20px;flex-shrink:0}
+.stats-bar{padding:10px 20px;background:var(--surface);border-top:2px solid var(--accent);display:flex;gap:20px;flex-shrink:0}
 .stat{display:flex;align-items:baseline;gap:5px}
 .stat-num{font-family:'DM Mono',monospace;font-size:18px;font-weight:500}
 .g{color:var(--green)}.r{color:var(--red)}
 .stat-label{font-size:11px;color:var(--muted)}
 #manual-wrap{display:none;padding:20px;flex-direction:column;gap:12px}
 .manual-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none;text-align:center}
-.check-btn{background:var(--accent);border:none;border-radius:10px;padding:14px;color:#fff;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%}
+.check-btn{background:var(--accent);border:none;border-radius:10px;padding:14px;color:#07222a;font-size:15px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;width:100%;letter-spacing:.05em;text-transform:uppercase}
 #loading-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;max-width:280px}
-.load-label{font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
-.load-pct{font-size:36px;font-family:'DM Mono',monospace;font-weight:500;color:var(--text);line-height:1}
+.load-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.load-pct{font-size:40px;font-family:'Montserrat',sans-serif;font-weight:800;color:var(--accent);line-height:1}
 .load-track{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
 .load-fill{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .4s ease}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo"><span>TM</span> District Conference</div>
+  <div class="logo">
+    <div class="logo-top">District 129 <span style="font-size:9px;background:var(--teal);color:var(--accent);border-radius:3px;padding:1px 5px;margin-left:4px;font-family:monospace;font-weight:400">B11</span></div>
+    <div class="logo-sub">Annual Conference · Mauritius 2026</div>
+  </div>
   <div id="status">connecting...</div>
 </header>
 
@@ -86,7 +92,7 @@ header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex
     <div class="load-pct" id="load-pct">0%</div>
     <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
   </div>
-  <div class="screen-title" id="sessions-title" style="display:none"><h1>Select session</h1><p>Which door are you scanning for?</p></div>
+  <div class="screen-title" id="sessions-title" style="display:none"><h1>Select Session</h1><p>Which event are you scanning for?</p></div>
   <div class="sessions-grid" id="sessions-grid" style="display:none"></div>
 </div>
 
@@ -99,7 +105,7 @@ header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex
     <video id="video" playsinline autoplay muted></video>
     <canvas id="canvas"></canvas>
     <div class="viewfinder"><div class="vf-box"><div class="vf-tl"></div><div class="scan-line"></div></div></div>
-    <div class="hint">Hold QR code in frame</div>
+    <div class="hint" id="hint">Hold QR code in frame</div>
   </div>
   <div id="manual-wrap">
     <input type="text" class="manual-input" id="manual-code" placeholder="Type attendee email..." />
@@ -121,7 +127,7 @@ header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex
 </div>
 
 <script>
-var API = 'https://script.google.com/macros/s/AKfycbwUPmOWKmE7yfnthGIrn5L9-g7H-b_XqUWFhGHhrwwKoc6Nlmxd7X-lJLiMVr3tpl3e/exec';
+var API = 'https://script.google.com/macros/s/AKfycbzAKdxySDR6MX3XAsZNmz9AgkCsB022_bvhlIUE7unxBhBbnNqFkdm3Sm_-_5ySnPTl/exec';
 var activeSession = null;
 var scanning = false;
 var stream = null;
@@ -136,10 +142,14 @@ var SCAN_INTERVAL = 50;
 var _detector = (typeof BarcodeDetector !== 'undefined')
   ? new BarcodeDetector({formats: ['qr_code']})
   : null;
+var _lastCode = null;
+var _lastCodeTime = 0;
+var CODE_COOLDOWN = 10000;
 
 var DEFAULTS = [
-  {id:'isc', name:'ISC', day:1},
-  {id:'gala', name:'Gala Dinner', day:2}
+  {id:'day1', name:'Conference Day One', day:1, date:'May\n08'},
+  {id:'day2', name:'Conference Day Two', day:2, date:'May\n09'},
+  {id:'gala', name:'Gala Dinner',        day:2, date:'May\n09'}
 ];
 
 window.onload = function() {
@@ -180,8 +190,11 @@ function renderSessions(list) {
   for (var i = 0; i < list.length; i++) {
     var s = list[i];
     var safe = s.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var date = (s.date || ('Day '+s.day)).replace(/\n/g,'<br>');
     html += '<button class="session-btn day'+s.day+'" onclick="pick(\''+safe+'\')">';
-    html += '<div class="day-tag">Day '+s.day+'</div>'+s.name+'</button>';
+    html += '<div class="btn-date">'+date+'</div>';
+    html += '<div class="btn-body"><div class="day-tag">Day '+s.day+'</div><div class="btn-name">'+s.name+'</div></div>';
+    html += '</button>';
   }
   var grid = document.getElementById('sessions-grid');
   grid.innerHTML = html;
@@ -211,24 +224,37 @@ function showSessions() {
   document.getElementById('session-screen').style.display = 'flex';
 }
 
+function setHint(msg) {
+  document.getElementById('hint').textContent = msg;
+}
+
 function startCam() {
   _video = document.getElementById('video');
   _canvas = document.getElementById('canvas');
   _ctx = _canvas.getContext('2d');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
+  setHint(_detector ? 'Starting (native)…' : 'Starting (jsQR)…');
+
+  function beginScanning() {
+    if (scanning) return;
+    scanning = true;
+    setHint((_detector ? 'Native' : 'jsQR') + ' · scanning…');
+    requestAnimationFrame(tick);
+  }
+
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3840},height:{ideal:2160}}})
     .then(function(s){
       stream = s;
       _video.srcObject = s;
-      _video.addEventListener('play', function onPlay() {
-        _video.removeEventListener('play', onPlay);
-        scanning = true;
-        requestAnimationFrame(tick);
-      });
-      _video.play().catch(function(){});
+      _video.addEventListener('loadedmetadata', beginScanning);
+      _video.addEventListener('canplay', beginScanning);
+      _video.addEventListener('play', beginScanning);
+      setTimeout(beginScanning, 2000);
+      _video.play().catch(function(e){ setHint('play() failed: ' + e.message); });
       document.getElementById('camera-wrap').style.display = 'flex';
       document.getElementById('manual-wrap').style.display = 'none';
     })
-    .catch(function(){
+    .catch(function(e){
+      setHint('Camera error: ' + e.message);
       document.getElementById('camera-wrap').style.display = 'none';
       document.getElementById('manual-wrap').style.display = 'flex';
     });
@@ -239,35 +265,56 @@ function stopCam() {
   if (stream) { stream.getTracks().forEach(function(t){t.stop();}); stream = null; }
 }
 
+var _frameCount = 0;
+var _lastHintUpdate = 0;
+
 function tick(ts) {
   if (!scanning) return;
   if (_video.readyState < 2) { requestAnimationFrame(tick); return; }
   if (ts - _lastTick < SCAN_INTERVAL) { requestAnimationFrame(tick); return; }
   _lastTick = ts;
 
+  // Draw frame to canvas regardless of detection method
+  var sw = _video.videoWidth, sh = _video.videoHeight;
+  if (!sw || !sh) { requestAnimationFrame(tick); return; }
+  _frameCount++;
+  if (ts - _lastHintUpdate > 1000) {
+    _lastHintUpdate = ts;
+    setHint((_detector ? 'Native' : 'jsQR') + ' · ' + _frameCount + ' frames · ' + sw + 'x' + sh);
+  }
+
   if (_detector) {
     _detector.detect(_video)
       .then(function(codes) {
         if (!scanning) return;
-        if (codes.length > 0) { scanning = false; lookup(codes[0].rawValue); }
-        else { requestAnimationFrame(tick); }
+        if (codes.length > 0) {
+          var val = codes[0].rawValue;
+          if (val === _lastCode && Date.now() - _lastCodeTime < CODE_COOLDOWN) { requestAnimationFrame(tick); return; }
+          scanning = false; lookup(val);
+        } else { requestAnimationFrame(tick); }
       })
-      .catch(function() { requestAnimationFrame(tick); });
+      .catch(function() {
+        _detector = null;
+        requestAnimationFrame(tick);
+      });
   } else {
-    var sw = _video.videoWidth, sh = _video.videoHeight;
-    var scale = Math.min(1, 1024 / Math.max(sw, sh));
+    var scale = Math.min(1, 1920 / Math.max(sw, sh));
     var w = Math.round(sw * scale), h = Math.round(sh * scale);
     if (_canvas.width !== w) _canvas.width = w;
     if (_canvas.height !== h) _canvas.height = h;
     _ctx.drawImage(_video, 0, 0, w, h);
     var img = _ctx.getImageData(0, 0, w, h);
     var code = jsQR(img.data, w, h, {inversionAttempts:'attemptBoth'});
-    if (code && code.data) { scanning = false; lookup(code.data); }
-    else { requestAnimationFrame(tick); }
+    if (code && code.data) {
+      if (code.data === _lastCode && Date.now() - _lastCodeTime < CODE_COOLDOWN) { requestAnimationFrame(tick); return; }
+      scanning = false; lookup(code.data);
+    } else { requestAnimationFrame(tick); }
   }
 }
 
 function lookup(code) {
+  _lastCode = code;
+  _lastCodeTime = Date.now();
   fetch(API + '?action=checkin&code=' + encodeURIComponent(code) + '&session=' + encodeURIComponent(activeSession))
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -275,13 +322,27 @@ function lookup(code) {
         cntOk++; document.getElementById('cnt-ok').textContent = cntOk;
         show('approved','✓',d.name, d.detail || activeSession);
       } else if (d.status === 'already') {
-        show('unknown','⚠', d.name || 'Already checked in', 'Scanned at ' + (d.time||'earlier'));
+        show('unknown','⚠', d.name || 'Already checked in', 'Scanned ' + fmtTime(d.time));
       } else {
         cntNo++; document.getElementById('cnt-no').textContent = cntNo;
         show('denied','✗', d.name || 'Not registered', d.reason || 'No ticket for this session');
       }
     })
     .catch(function(){ show('unknown','!','Connection error','Could not reach Google Sheet'); });
+}
+
+function fmtTime(raw) {
+  if (!raw) return 'earlier';
+  var d = new Date(raw.replace(' ', 'T'));
+  if (isNaN(d)) return raw;
+  var today = new Date();
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var isToday = d.getDate()===today.getDate() && d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear();
+  var h = d.getHours(), m = d.getMinutes();
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  var time = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+  return isToday ? 'Today at ' + time : d.getDate() + ' ' + months[d.getMonth()] + ' at ' + time;
 }
 
 function checkManual() {
@@ -293,19 +354,29 @@ function show(type, icon, name, detail) {
   var o = document.getElementById('result-overlay');
   o.className = type; o.style.display = 'flex';
   document.getElementById('r-icon').textContent = icon;
-  document.getElementById('r-status').textContent = type==='approved'?'APPROVED':type==='denied'?'DENIED':'NOTE';
+  document.getElementById('r-status').textContent = type==='approved'?'APPROVED':type==='denied'?'DENIED':'ALREADY IN';
   document.getElementById('r-name').textContent = name;
   document.getElementById('r-detail').textContent = detail;
   if (navigator.vibrate) navigator.vibrate(type==='approved'?[80]:[80,60,80]);
   clearTimeout(timer);
-  timer = setTimeout(dismiss, 4000);
 }
 
 function dismiss() {
   clearTimeout(timer);
   document.getElementById('result-overlay').style.display = 'none';
-  scanning = true;
-  requestAnimationFrame(tick);
+  var count = 2;
+  setHint('Next scan in ' + count + 's…');
+  var cd = setInterval(function() {
+    count--;
+    if (count <= 0) {
+      clearInterval(cd);
+      scanning = true;
+      setHint((_detector ? 'Native' : 'jsQR') + ' · scanning…');
+      requestAnimationFrame(tick);
+    } else {
+      setHint('Next scan in ' + count + 's…');
+    }
+  }, 1000);
 }
 
 function setStatus(on) {
