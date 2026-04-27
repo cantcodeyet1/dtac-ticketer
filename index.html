@@ -67,6 +67,11 @@ header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex
 #manual-wrap{display:none;padding:20px;flex-direction:column;gap:12px}
 .manual-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;outline:none;text-align:center}
 .check-btn{background:var(--accent);border:none;border-radius:10px;padding:14px;color:#fff;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;width:100%}
+#loading-wrap{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;max-width:280px}
+.load-label{font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.load-pct{font-size:36px;font-family:'DM Mono',monospace;font-weight:500;color:var(--text);line-height:1}
+.load-track{width:100%;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.load-fill{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .4s ease}
 </style>
 </head>
 <body>
@@ -76,8 +81,13 @@ header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex
 </header>
 
 <div id="session-screen">
-  <div class="screen-title"><h1>Select session</h1><p>Which door are you scanning for?</p></div>
-  <div class="sessions-grid" id="sessions-grid"></div>
+  <div id="loading-wrap">
+    <div class="load-label">Connecting</div>
+    <div class="load-pct" id="load-pct">0%</div>
+    <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+  </div>
+  <div class="screen-title" id="sessions-title" style="display:none"><h1>Select session</h1><p>Which door are you scanning for?</p></div>
+  <div class="sessions-grid" id="sessions-grid" style="display:none"></div>
 </div>
 
 <div id="scanner-screen">
@@ -118,6 +128,11 @@ var stream = null;
 var timer = null;
 var cntOk = 0;
 var cntNo = 0;
+var _video = null;
+var _canvas = null;
+var _ctx = null;
+var _lastTick = 0;
+var SCAN_INTERVAL = 66; // ~15fps
 
 var DEFAULTS = [
   {id:'isc', name:'ISC', day:1},
@@ -125,17 +140,37 @@ var DEFAULTS = [
 ];
 
 window.onload = function() {
+  var pct = 0;
+  var loadTimer = setInterval(function() {
+    pct = Math.min(pct + (Math.random() * 8 + 4), 88);
+    setLoadPct(pct);
+  }, 200);
+
   fetch(API + '?action=sessions')
     .then(function(r){ return r.json(); })
     .then(function(d){
-      renderSessions(d.sessions && d.sessions.length ? d.sessions : DEFAULTS);
-      setStatus(true);
+      clearInterval(loadTimer);
+      setLoadPct(100);
+      setTimeout(function(){
+        renderSessions(d.sessions && d.sessions.length ? d.sessions : DEFAULTS);
+        setStatus(true);
+      }, 300);
     })
     .catch(function(){
-      renderSessions(DEFAULTS);
-      setStatus(false);
+      clearInterval(loadTimer);
+      setLoadPct(100);
+      setTimeout(function(){
+        renderSessions(DEFAULTS);
+        setStatus(false);
+      }, 300);
     });
 };
+
+function setLoadPct(p) {
+  p = Math.round(p);
+  document.getElementById('load-fill').style.width = p + '%';
+  document.getElementById('load-pct').textContent = p + '%';
+}
 
 function renderSessions(list) {
   var html = '';
@@ -145,7 +180,11 @@ function renderSessions(list) {
     html += '<button class="session-btn day'+s.day+'" onclick="pick(\''+safe+'\')">';
     html += '<div class="day-tag">Day '+s.day+'</div>'+s.name+'</button>';
   }
-  document.getElementById('sessions-grid').innerHTML = html;
+  var grid = document.getElementById('sessions-grid');
+  grid.innerHTML = html;
+  document.getElementById('loading-wrap').style.display = 'none';
+  document.getElementById('sessions-title').style.display = '';
+  grid.style.display = '';
 }
 
 function pick(name) {
@@ -170,13 +209,15 @@ function showSessions() {
 }
 
 function startCam() {
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+  _video = document.getElementById('video');
+  _canvas = document.getElementById('canvas');
+  _ctx = _canvas.getContext('2d');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}})
     .then(function(s){
       stream = s;
-      var v = document.getElementById('video');
-      v.srcObject = s;
-      v.play();
-      v.onloadedmetadata = function(){ scanning = true; requestAnimationFrame(tick); };
+      _video.srcObject = s;
+      _video.play();
+      _video.onloadedmetadata = function(){ scanning = true; requestAnimationFrame(tick); };
       document.getElementById('camera-wrap').style.display = 'flex';
       document.getElementById('manual-wrap').style.display = 'none';
     })
@@ -191,16 +232,19 @@ function stopCam() {
   if (stream) { stream.getTracks().forEach(function(t){t.stop();}); stream = null; }
 }
 
-function tick() {
+function tick(ts) {
   if (!scanning) return;
-  var v = document.getElementById('video');
-  var c = document.getElementById('canvas');
-  if (v.readyState !== v.HAVE_ENOUGH_DATA) { requestAnimationFrame(tick); return; }
-  c.width = v.videoWidth; c.height = v.videoHeight;
-  var ctx = c.getContext('2d');
-  ctx.drawImage(v,0,0);
-  var img = ctx.getImageData(0,0,c.width,c.height);
-  var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
+  if (_video.readyState !== _video.HAVE_ENOUGH_DATA) { requestAnimationFrame(tick); return; }
+  if (ts - _lastTick < SCAN_INTERVAL) { requestAnimationFrame(tick); return; }
+  _lastTick = ts;
+  var sw = _video.videoWidth, sh = _video.videoHeight;
+  var scale = Math.min(1, 640 / Math.max(sw, sh));
+  var w = Math.round(sw * scale), h = Math.round(sh * scale);
+  if (_canvas.width !== w) _canvas.width = w;
+  if (_canvas.height !== h) _canvas.height = h;
+  _ctx.drawImage(_video, 0, 0, w, h);
+  var img = _ctx.getImageData(0, 0, w, h);
+  var code = jsQR(img.data, w, h, {inversionAttempts:'dontInvert'});
   if (code && code.data) { scanning = false; lookup(code.data); }
   else { requestAnimationFrame(tick); }
 }
